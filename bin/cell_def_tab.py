@@ -2728,7 +2728,7 @@ class CellDef(QWidget):
         label.setAlignment(QtCore.Qt.AlignCenter)
         self.vbox.addWidget(label)
 
-
+    #--- PhysiBOSS ----------------
     def choose_bnd_file(self):
         file , check = QFileDialog.getOpenFileName(None, "Please select a MaBoSS BND file",
                                                "", "MaBoSS BND Files (*.bnd)")
@@ -2924,12 +2924,26 @@ class CellDef(QWidget):
     def physiboss_parameters_value_changed(self, i, text):
         self.param_d[self.current_cell_def]["intracellular"]["parameters"][i] = (self.param_d[self.current_cell_def]["intracellular"]["parameters"][i][0], text)
 
+
+    #--- SBML ODEs ----------------
+
+    def choose_sbml_file(self):
+        file , check = QFileDialog.getOpenFileName(None, "Please select a SBML file",
+                                               "", "SBML (*.xml)")
+        if check:
+            self.sbml_file.setText(file)
+            
+    def sbml_filename_changed(self, text):
+        self.param_d[self.current_cell_def]["intracellular"]['sbml_filename'] = text
+
+
     
     def intracellular_type_changed(self, index):
 
         self.physiboss_boolean_frame.hide()
+        self.ode_frame.hide()
         if index == 1:
-            # print("PhysiBoSS")
+            print("PhysiBoSS")
             if self.param_d[self.current_cell_def]["intracellular"] is None:
                 self.param_d[self.current_cell_def]["intracellular"] = {"type": "maboss"}
                 
@@ -2956,18 +2970,21 @@ class CellDef(QWidget):
                 
             self.physiboss_boolean_frame.show()
         elif index == 2:
-            #print("SBML ODEs")
+            print("SBML ODEs")
             if self.param_d[self.current_cell_def]["intracellular"] is None:
                 self.param_d[self.current_cell_def]["intracellular"] = {"type": "roadrunner"}
                 
             if 'initial_values' not in self.param_d[self.current_cell_def]["intracellular"].keys():
                 self.param_d[self.current_cell_def]["intracellular"]["initial_values"] = []
                 self.physiboss_clear_initial_values()
+                
+            self.ode_frame.show()
             
         elif index == 3:
             print("FBA")
         else:
             print("Unkown intracellular type")
+            
         
     #--------------------------------------------------------
     def create_intracellular_tab(self):
@@ -2988,7 +3005,7 @@ class CellDef(QWidget):
         self.intracellular_type_dropdown.currentIndexChanged.connect(self.intracellular_type_changed)
         self.intracellular_type_dropdown.addItem("none")
         self.intracellular_type_dropdown.addItem("boolean")
-        self.intracellular_type_dropdown.addItem("odes")
+        self.intracellular_type_dropdown.addItem("ode")
         self.intracellular_type_dropdown.addItem("fba")
         type_hbox.addWidget(self.intracellular_type_dropdown)
 
@@ -2999,6 +3016,7 @@ class CellDef(QWidget):
         # self.boolean_frame = QFrame()
         ly = QVBoxLayout()
         self.physiboss_boolean_frame.setLayout(ly)
+        
 
         bnd_hbox = QHBoxLayout()
 
@@ -3131,7 +3149,32 @@ class CellDef(QWidget):
         parameters_addbutton.clicked.connect(self.physiboss_clicked_add_parameter)
         ly.addWidget(parameters_addbutton)
 
+
+
+        # ode -------------
+        lz = QVBoxLayout()
+        self.ode_frame.setLayout(lz)
+        
+        sbml_hbox = QHBoxLayout()
+        
+        sbml_label = QLabel("SBML file")
+        sbml_hbox.addWidget(sbml_label)
+
+        self.sbml_file = QLineEdit()
+        self.sbml_file.textChanged.connect(self.sbml_filename_changed)
+        sbml_hbox.addWidget(self.sbml_file)
+
+        sbml_button = QPushButton("Choose SBML file")
+        sbml_button.clicked.connect(self.choose_sbml_file)
+
+        sbml_hbox.addWidget(sbml_button)
+        lz.addLayout(sbml_hbox)
+
+
+
+
         glayout.addWidget(self.physiboss_boolean_frame)
+        glayout.addWidget(self.ode_frame)
         glayout.addStretch()
 
         intracellular_tab.setLayout(glayout)
@@ -6142,8 +6185,17 @@ class CellDef(QWidget):
                     scaling = ET.SubElement(intracellular, "scaling")
                     scaling.text = self.param_d[cdef]['intracellular']['scaling']
                     scaling.tail = self.indent10
+                
+                # roadrunner
+                if self.param_d[cdef]['intracellular']['type'] == "roadrunner":
+                    intracellular = ET.SubElement(pheno, "intracellular", {"type": "roadrunner"})
+                    intracellular.text = self.indent12  # affects indent of child
+                    intracellular.tail = "\n" + self.indent10
                     
-
+                    sbml_filename = ET.SubElement(intracellular, "sbml_filename")
+                    sbml_filename.text = "./" + os.path.relpath(self.param_d[cdef]['intracellular']['sbml_filename'], os.path.dirname(self.config_path))
+                    sbml_filename.tail = self.indent12
+                
 
         if self.debug_print_fill_xml:
             print('\n')
