@@ -1204,6 +1204,11 @@ def populate_tree_cell_defs(cell_def_tab):
                         for parameter in uep_intracellular_parameters:
                             cell_def_tab.param_d[cell_def_name]["intracellular"]["parameters"].append((parameter.attrib["name"], parameter.text))                    
 
+                if uep_intracellular.attrib["type"] == "roadrunner":
+                    # --------- LibRR specific code
+                    cell_def_tab.param_d[cell_def_name]["intracellular"]["type"] = "roadrunner"
+                    cell_def_tab.param_d[cell_def_name]["intracellular"]["sbml_filename"] = uep_intracellular.find("sbml_filename").text if uep_intracellular.find("sbml_filename") is not None else None
+
             print("------ done parsing intracellular:")
 
             # # ---------  custom data 

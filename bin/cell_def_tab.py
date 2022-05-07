@@ -129,6 +129,7 @@ class CellDef(QWidget):
         self.tree.setHeaderItem(header)
 
         self.physiboss_boolean_frame = QFrame()
+        self.ode_frame = QFrame()
         
         items = []
         model = QtCore.QStringListModel()
@@ -2955,7 +2956,14 @@ class CellDef(QWidget):
                 
             self.physiboss_boolean_frame.show()
         elif index == 2:
-            print("SBML ODEs")
+            #print("SBML ODEs")
+            if self.param_d[self.current_cell_def]["intracellular"] is None:
+                self.param_d[self.current_cell_def]["intracellular"] = {"type": "roadrunner"}
+                
+            if 'initial_values' not in self.param_d[self.current_cell_def]["intracellular"].keys():
+                self.param_d[self.current_cell_def]["intracellular"]["initial_values"] = []
+                self.physiboss_clear_initial_values()
+            
         elif index == 3:
             print("FBA")
         else:
